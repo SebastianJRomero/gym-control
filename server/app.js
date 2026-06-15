@@ -11,11 +11,20 @@ const app = express();
 const PORT = 3000;
 
 app.use(cors());
+
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 
 app.use('/api/members', memberRoutes);
+
+const membershipTypeRoutes =
+  require('./routes/membershipTypeRoutes');
+
+app.use(
+  '/api/membership-types',
+  membershipTypeRoutes
+);
 
 app.get('/api/health', (req, res) => {
   res.json({

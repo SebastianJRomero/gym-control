@@ -31,15 +31,17 @@ function initializeDatabase() {
     )
   `);
 
-  // Tabla miembros
+  // Tabla Members
   db.run(`
     CREATE TABLE IF NOT EXISTS members (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
 
       nombre TEXT NOT NULL,
-      cedula TEXT NOT NULL,
+      cedula TEXT NOT NULL UNIQUE,
       celular TEXT NOT NULL,
 
+      numero_recibo TEXT NOT NULL,
+      
       fecha_inicio DATE NOT NULL,
       fecha_fin DATE NOT NULL,
 
@@ -49,6 +51,8 @@ function initializeDatabase() {
 
       observaciones TEXT,
 
+      archivado INTEGER DEFAULT 0,
+
       created_by INTEGER,
 
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -57,8 +61,25 @@ function initializeDatabase() {
       FOREIGN KEY(created_by) REFERENCES users(id)
     )
   `);
+    // Tabla Tipo de membresias
+    db.run(`
+  CREATE TABLE IF NOT EXISTS membership_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    nombre TEXT NOT NULL UNIQUE,
+
+    dias INTEGER NOT NULL,
+
+    activo INTEGER DEFAULT 1,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
   createAdminUser();
+
+  createDefaultMembershipTypes();
+
 }
 
 async function createAdminUser() {
@@ -104,4 +125,79 @@ async function createAdminUser() {
   );
 }
 
+function createDefaultMembershipTypes() {
+
+  const defaultTypes = [
+
+    {
+      nombre: 'Quincenal',
+      dias: 15
+    },
+
+    {
+      nombre: 'Mensual',
+      dias: 30
+    },
+
+    {
+      nombre: 'Trimestral',
+      dias: 90
+    },
+
+    {
+      nombre: 'Semestral',
+      dias: 180
+    },
+
+    {
+      nombre: 'Anual',
+      dias: 365
+    }
+
+  ];
+
+  defaultTypes.forEach((type) => {
+
+    db.get(
+      `
+      SELECT id
+      FROM membership_types
+      WHERE nombre = ?
+      `,
+      [type.nombre],
+      (err, row) => {
+
+        if (err) {
+          console.error(err);
+          return;
+        }
+
+        if (!row) {
+
+          db.run(
+            `
+            INSERT INTO membership_types
+            (
+              nombre,
+              dias
+            )
+            VALUES (?, ?)
+            `,
+            [
+              type.nombre,
+              type.dias
+            ]
+          );
+
+          console.log(
+            `Membresía creada: ${type.nombre}`
+          );
+        }
+
+      }
+    );
+
+  });
+
+}
 module.exports = db;

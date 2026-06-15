@@ -6,6 +6,7 @@ function createMember(req, res) {
     nombre,
     cedula,
     celular,
+    numero_recibo,
     fecha_inicio,
     fecha_fin,
     tipo_membresia,
@@ -16,8 +17,10 @@ function createMember(req, res) {
     !nombre ||
     !cedula ||
     !celular ||
+    !numero_recibo ||
     !fecha_inicio ||
-    !fecha_fin
+    !fecha_fin ||
+    !tipo_membresia
   ) {
     return res.status(400).json({
       success: false,
@@ -32,18 +35,20 @@ function createMember(req, res) {
       nombre,
       cedula,
       celular,
+      numero_recibo,
       fecha_inicio,
       fecha_fin,
       tipo_membresia,
       observaciones,
       created_by
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       nombre,
       cedula,
       celular,
+      numero_recibo,
       fecha_inicio,
       fecha_fin,
       tipo_membresia || null,
@@ -52,12 +57,27 @@ function createMember(req, res) {
     ],
     function(err) {
 
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: err.message
-        });
+    if (err) {
+
+      if (
+        err.message.includes(
+          'members.cedula'
+          )
+      ) {
+
+      return res.status(400).json({
+        success: false,
+        message: 'Ya existe un registro con esa cédula'
+        })
+
       }
+
+      return res.status(500).json({
+        success: false,
+        message: err.message
+      })
+
+    }
 
       return res.status(201).json({
         success: true,
@@ -78,12 +98,14 @@ function getMembers(req, res) {
       nombre,
       cedula,
       celular,
+      numero_recibo,
       fecha_inicio,
       fecha_fin,
       tipo_membresia,
       observaciones,
       created_at
     FROM members
+    WHERE archivado = 0
     ORDER BY id DESC
     `,
     [],
@@ -149,6 +171,7 @@ function updateMember(req, res) {
     nombre,
     cedula,
     celular,
+    numero_recibo,
     fecha_inicio,
     fecha_fin,
     tipo_membresia,
@@ -162,6 +185,7 @@ function updateMember(req, res) {
       nombre = ?,
       cedula = ?,
       celular = ?,
+      numero_recibo = ?,
       fecha_inicio = ?,
       fecha_fin = ?,
       tipo_membresia = ?,
@@ -173,6 +197,7 @@ function updateMember(req, res) {
       nombre,
       cedula,
       celular,
+      numero_recibo,
       fecha_inicio,
       fecha_fin,
       tipo_membresia,
@@ -225,10 +250,40 @@ function deleteMember(req, res) {
   );
 }
 
+function archiveMember(req, res) {
+
+  const { id } = req.params;
+
+  db.run(
+    `
+    UPDATE members
+    SET archivado = 1
+    WHERE id = ?
+    `,
+    [id],
+    function(err) {
+
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          message: err.message
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Miembro archivado'
+      });
+
+    }
+  );
+}
+
 module.exports = {
   createMember,
   getMembers,
   getMemberById,
   updateMember,
-  deleteMember
+  deleteMember,
+  archiveMember
 };

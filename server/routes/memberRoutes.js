@@ -8,7 +8,8 @@ const {
   getMembers,
   getMemberById,
   updateMember,
-  deleteMember
+  deleteMember,
+  archiveMember
 } = require('../controllers/memberController');
 
 router.get('/', verifyToken, getMembers);
@@ -20,5 +21,7 @@ router.post('/', verifyToken, createMember);
 router.put('/:id', verifyToken, updateMember);
 
 router.delete('/:id', verifyToken, deleteMember);
+
+router.put('/:id/archive', archiveMember);
 
 module.exports = router;
